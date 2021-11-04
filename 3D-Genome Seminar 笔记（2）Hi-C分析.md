@@ -5,7 +5,7 @@
 
 ## 计数矩阵、热图及分辨率
 ![](https://files.mdnice.com/user/20439/40d98446-6055-4980-b9e9-eb32d18864db.png)
-分辨率指的是进行互作关系统计时DNA被分割成的bin的长度。
+分辨率指的是进行互作关系统计时DNA被分割成的bin的长度。 
 
 ## cis互作和trans互作
 
@@ -203,3 +203,100 @@ TADtree
 其中前三种较为常用。
 
 ### Call TADs: DI
+
+![](https://files.mdnice.com/user/20439/735e4a29-83f4-4dfb-a49a-9856faf0d46e.png)
+对于TAD边界位置来说，它的左右位置互作方向是相反的。如上图，A点偏好上游，而B点偏好下游。directionality index（方向指数）这个方法就是根据这个原理设计的。
+
+![](https://files.mdnice.com/user/20439/c75ee95c-211f-4061-a956-c00d9588c23c.png)
+
+DI-HMM 方法首先采用方向指数(directionality index)来表征一个染色体区域与上下游交互作用的偏差，当这个偏差出现符号跳转时，意味着可能出现 TAD 的边界．在方向指数中利用隐马尔可夫模型可以推断出 TAD 的具体位置。**（但是HMM模型到底是如何在算法中起作用的？）**
+
+![](https://files.mdnice.com/user/20439/ae437fed-9db3-4e75-8418-a9692411b73c.png)
+
+### Call TADs: Insulation Score
+
+https://github.com/dekkerlab/crane-nature-2015  
+![](https://files.mdnice.com/user/20439/72a82d67-6a4f-4e07-ba28-ee4de7cad25f.png)
+首先在热图上定义一个滑动窗口，在滑动过程中统计每个窗口中互作的数量，这样可以得到下面那条线。这样就可以得到互作数量发生转变的位置。
+
+
+```
+perl matrix2insulation.pl -i *.dense_header.matrix -is 500000 -ids 250000 -im mean -nt 0.1 -o ./  
+```
+---
+- 参数解释  
+
+i: 交互矩阵  
+is: insulation square，默认500000，动物推荐500000，植物推荐200000-250000.  
+ids: insulation delta span，默认250000，植物推荐100000-200000. is必须要比ids大. 
+nt: delta bound阈值，提高阈值可以过滤一些边界不明显的TAD.  
+bmoe: boundary margin of error.一般不予设定。  
+
+---
+- 如何得到交互矩阵
+
+hicpro(*.matrix & *.bed) → IS input matrix
+
+**Step1:** 将稀疏矩阵转成稠密矩阵。  
+（稀疏矩阵:矩阵中0元素的个数远大于非零,且0元素分布无规律；稠密矩阵反之）
+
+
+```
+Python2.7 PATHWAY/HiC-Pro_2.11.4/bin/utils/sparseToDense.py *_50k_iced.matrix -b *_50k_abs.bed --perchr > mESC_50k.log 2>&1
+```
+**Step2:**  添加表头  
+采用R或者python/perl  
+表头形式`bin6000000|ce10|chrX:1-10001`
+bin的顺序|物种参考基因组的名字|染色体位置信息  
+
+下图是利用R添加表头的代码示例
+![](https://files.mdnice.com/user/20439/bb0bf011-378b-49ac-9e68-18c911db9d9b.png)
+注意：  
+line5调用的参考基因组，之前用的哪个版本比对，这时候就调用哪个版本。  
+line6要输入数据分析所使用的分辨率数值
+
+---
+- 输出结果  
+
+输出4个文件
+![](https://files.mdnice.com/user/20439/09a7c2b7-2367-46c3-aaed-af53d65a49a9.png)
+
+.insulation.bedGraph
+![](https://files.mdnice.com/user/20439/efdf9a55-be0c-403f-8d33-df02a38b7cfb.png)
+前三列是每个BIN的位置信息，最后一列是insulation score的得分。
+
+.insulation.boundaries.bed
+![](https://files.mdnice.com/user/20439/09282ec9-33d3-41ed-a2fb-204a90b465b5.png)
+边界信息文件。第四列是包含位置信息的表头，最后一列是边界强度的得分情况
+
+### Call TADs: Arrowhead
+https://github.com/aidenlab/juicer/wiki/Arrowhead  
+是一个juicer工具。
+
+```
+java -Xmx8g -jar PATHWAY/juicer/scripts/CPU/common/juicer_tools.jar arrowhead ./*.hic --
+threads 8 -r 10000 -k KR ./contact_domains_10kb
+```
+
+## Call loops: HiCCUPS
+
+https://github.com/aidenlab/juicer/wiki/HiCCUPS
+
+同样是juicer工具。可以用GPU或CPU运算，一般还是选择CPU。但是GPU运算速度快一点。
+```
+java -Xmx8g -jar PATHWAY/juicer/scripts/CPU/common/juicer_tools.jar hiccups --cpu
+--threads 8 -r 5000 -k KR ./*.hic ./
+```
+
+## 可视化工具
+
+有以下几种：
+
+• Juicebox  
+• WashU: http://epigenomegateway.wustl.edu/  
+• HiTC  
+• HiCPlotter  
+• HiCExplorer  
+• R  
+
+这个比较直观，就不记了。用到的时候再说吧。
