@@ -1,60 +1,302 @@
-# 三维基因组实验原理
-## 基于NGS的染色质三维构象捕获技术
+# Hi-C数据分析相关的基本概念
+## 染色质的层级结构
+![](https://files.mdnice.com/user/20439/2055cff1-87d7-40cb-8920-90888f3808e9.png)
+研究不同层级结构的互作关系需要不同的分辨率精度。上图示意了不同分辨率分别能反映的互作结构层次。关于互作结构层次概念，后文有详述。
 
-![](https://files.mdnice.com/user/20439/e1368da7-e4e5-498d-8d74-131626d2888c.png)
-### 1. crosslink DNA
+## 计数矩阵、热图及分辨率
+![](https://files.mdnice.com/user/20439/40d98446-6055-4980-b9e9-eb32d18864db.png)
+分辨率指的是进行互作关系统计时DNA被分割成的bin的长度。 
 
-![](https://files.mdnice.com/user/20439/f9b9687f-0f75-4390-b8e3-c37cda9da330.png)
-甲醛（FA）是小分子交联剂，只能交联距离极近的组蛋白，所以优点是背景干净，缺点是只能保留两两互作的交联关系，而complex结构无法保留。
-长交联剂（DSG/EGS）具有空间位阻，用于保留染色体之间或较远距离的互作关系。
-### 2. 染色质打断chromatin shearing
+## cis互作和trans互作
 
-![](https://files.mdnice.com/user/20439/3f011c31-98e3-403e-ad24-7b62d8e63f24.png)
-- 超声打断：
+![](https://files.mdnice.com/user/20439/c8cf6698-0a2b-4aa9-8e06-ec9e9c805773.png)
+同一条染色质上的互作关系为cis，不同染色质上为trans
 
-对染色质捕获没有序列偏好性，但效率很低且不均匀。
-- 限制性内切酶：
+# Hi-C分析流程
+## 需要用到的软件概览
 
-Hi-C最常用。BL Hi-C选择性切割GC密集的区间，也就是主要捕获活跃调控元件之间的互作。
+![](https://files.mdnice.com/user/20439/3455ff4a-f52c-4bc2-9a92-48847daad71d.png)
+## Hi-C pro
+### HiC-Pro workflow
+![](https://files.mdnice.com/user/20439/7004e17e-ee6a-4a55-a2ab-189e3c130ef8.png)
+### HiC-Pro的安装：基于py2.7
+在安装HiC-Pro之前需要先配置好如下环境
+```
+conda create --prefix=PATHWAY python=2.7
+source activate PATHWAY
+conda install -p PATHWAY -c bioconda bx-python
+conda install -p PATHWAY -c ipyrad pysam
+conda install -p PATHWAY -c conda-forge numpy
+conda install -p PATHWAY -c conda-forge scipy
+conda install -p PATHWAY -c bioconda iced
+```
+然后源码编译安装
+```
+tar -zxvf HiC-Pro-2.11.4.tar.gz
+cd HiC-Pro-2.11.4
+vi config-install.txt
+make configure
+make install
+```
+由于HiC-Pro是一个集成包，所以在初始化时需要定义一下调用的包的安装位置，如下图。
+![](https://files.mdnice.com/user/20439/aa329b21-735e-4b3c-9c97-8591c1858b36.png)
 
-- 核酸裂解酶：
+### HiC-Pro的使用
+https://github.com/nservant/HiC-Pro
 
-三种酶对染色质有不同的偏好性。
+- Usage: 
+```
+HiC-Pro -i INPUT -o OUTPUT -c CONFIG [-s ANALYSIS_STEP] [-p] [-h] [-v]
+-i --input INPUT: input data folder; Must contains a folder per sample with input files
+-o --output OUTPUT: output folder
+-c --conf CONFIG: configuration file for Hi-C processing
+```
+-i：存放数据的文件夹，此文件夹下的每对双端测序文件都
+需要重新建立一个文件夹。如下图
+![](https://files.mdnice.com/user/20439/7de2b651-ed3b-4399-963c-c0156cda2d66.png)
 
-**MNase**在浓度较低的情况下优先切割核小体之间的linker。由于它很擅长找linker，甚至最高分辨率可以把每个核小体都切开。所以如果测序深度高的情况下需要高精度数据的话（例如研究核小体结构水平的互作），Micro-C比Hi-C更加值得推荐。
+- Config：
 
-**DNase**更倾向于切割没有核小体的裸露开放染色质中没有被转录因子蛋白占位的地方，DNase的特点是可以把染色质切得非常碎（60bp）。
+数据后缀名称的设置，需要与输入的fq.gz文件后缀一致
+![](https://files.mdnice.com/user/20439/fcb4add9-718a-4627-8fb7-1e582ae755fc.png)
 
-**Tn5**相当于前两者的结合。所以ATAC的信号是最全的。
-并且，Tn5精度比较高。同时track-loop（Tn5）在切割后的连接步骤里表现很好。与之相反，DNase则由于切得太碎，存在连接不上的情况。所以更加推荐用Tn5。
-### 重连接 re-ligation
-re-ligation是一个重要环节，它的成环效率直接影响了能否观察到最终结果。
-![](https://files.mdnice.com/user/20439/3da1d524-9334-432a-b43d-e5531b2c9977.png)
+bowtie比对的参数设置。一般使用默认参数即可，仅需将`BOWTIE2_IDX_PATH`设置为索引文件所在路径。
+![](https://files.mdnice.com/user/20439/c5e22d5a-52bd-41a6-8612-6c3b63a78ddb.png)
 
-- biotin-dNTP
+`Annotation files`设置使用的参考基因组名称以及基因组大小。后者在软件安装时有专门的注释文件可供使用。
+Digestion Hi-C的`GENOME_FRAGMENT`时酶切位点文件，同样为软件自备，只需选择合适的即可。
+![](https://files.mdnice.com/user/20439/8220f628-e3f0-4c67-9ba0-0cd6a622e4ce.png)
 
-与超声打断类似，属于没有长度的连接，引入单个碱基去连接。缺点是如果离得太远会连不上。
+`BIN_SIZE`就是矩阵分辨率，输入需要的数值即可。
+![](https://files.mdnice.com/user/20439/53de6b59-5967-4744-b0f9-f7a57b3bb894.png)
 
-- biotin-Linker
-比较长，连接起来更容易。例如DNase把蛋白左右的染色质切得太碎，用dNTP够不到就很难连上，这时候可以选择使用长一点的Linker进行连接。如下图为BAT HiC的流程图，除了重连接使用的为Linker以外，其他步骤与HiC相同。这样就能提高loop的出现概率。
-![](https://files.mdnice.com/user/20439/1ffcf2cb-4407-474c-8ab5-a39a985bedc4.png)
+- results
 
-### 二次打断
-由于loop的长度在10m左右，而测序无法测那么长。所以需要进一步打断成300-500bp的片段。
+官方文档：http://nservant.github.io/HiC-Pro/RESULTS.html
 
-![](https://files.mdnice.com/user/20439/8c1da805-1195-4311-b38b-0f6dc5eb0d5b.png)
-- 超声：90%的组学都会做超声。缺点是打断没有偏好性。
+![](https://files.mdnice.com/user/20439/2d5da6c1-06e3-4db0-a3ce-84666b7bc383.png)
+results分为bowtie比对结果和Hi-C结果
 
-- 限制性内切酶：
+Hi-C结果中，最重要的就是`*.allValidPairs`这个文件，后续数据分析都是基于这个文件。
 
-以DLO HiC为例。普通的biotin用磁珠富集，后续操作都是带着磁珠的。而磁珠存在密度大、位阻大的问题，会给后续分析造成影响。而用特殊的限制性内切酶可以识别重组位点，并在上下游几十abp的位置进行切割，这样其他没有重组位点的大片段不会被切割。又因为在pcr扩增时大片段不能被扩增，所以自然富集了有重组位点的片段。但是这个方法的缺点是酶切操作复杂，成功率不高，所以用的不多。
+matrix中的iced是校正后的数据，用的是ice方法。
 
-而scHi-C使用这个方法则是因为传统的超声破碎技术需要较多的loop存在，因为在超声过程中的染色质损失非常大。用酶的话就可以把酶加到饱和，增加打断率。
+\*.allValidPairs一般包含12列信息：read name, chr_read1, pos_reads1, strand_read1, chr_read2, pos_reads2, 
+strand_read2, fragment_size, res_frag_name1, res_frag_name2, mapq_read1, mapq_read2
 
-- Tn5：
+![](https://files.mdnice.com/user/20439/5f28ae37-b899-4630-8df7-94d753aa6758.png)
 
-取代超声增加片段均一化效率。并且Tn5打断后直接带着adapter。普通超声破碎后在建库前还需要加adapter，而这一步的效率也并不算特别高，所以也依赖于较高的DNA浓度。Tn5一步到位，效率高且损失小，适合微量细胞。缺点与内切酶一样，条件需要慢慢摸索。
+从*.allValidPairs可得到hicpro（\*.matrix & \*.bed）文件
 
-QA：
-必须在活细胞或新鲜情况下交联，否则会损失构象。（不能使用冷冻的细胞，可以交联固定以后再冷冻）
-大部分流程要求细胞浓度在10^6才能做出结果。
+.bed文件储存着bin的位置信息
+![](https://files.mdnice.com/user/20439/01b9e8c0-e131-4407-8e7b-306fff224f71.png)
+.matrix储存互作count数量。
+![](https://files.mdnice.com/user/20439/fbfc4261-3197-4219-a3e4-9ba49497b26c.png)
+
+## 评估最高分辨率：juicer
+
+https://github.com/aidenlab/juicer
+
+- 判断标准：
+
+某分辨率下，大于1000交互的bin所占的比例，
+是否大于80%。
+
+- 用法：
+
+找到`PATHWAY/juicer/juicer/misc/calculate_map_resolution.sh`脚本，运行即可
+
+```
+nohup sh calculate_map_resolution.sh *.allValidPairs coverage_output &
+```
+`coverage_output`是自己指定的输出文件。
+运行结果：
+![](https://files.mdnice.com/user/20439/fd5817e9-bf03-49ce-8aba-1964cd7f3ad5.png)
+
+## Call A/B compartment
+
+### A/B compartment
+![](https://files.mdnice.com/user/20439/bf6f82df-636b-468a-9de1-1ec0e8e7ad27.png)
+（Lieberman-Aiden et al., Science, 2010）
+
+在这篇最早发表的文章中，作者发现把Hi-C结果标准化后，出现了区别非常明显的格子形状（c图）。将数据用PCA降维后，出现了AB两个主成分，一个是正的一个是负的，即A/B compartment。其中正的为A，负的为B。
+
+![](https://files.mdnice.com/user/20439/64a99f08-3062-46a1-856e-31a3ff854b88.png)
+
+**A compartments**：开放的染色质，表达活跃，基因丰富，具有较高的GC含量，包含用于主动转录的组蛋白标记，通常位于细胞核的内部。
+
+**B compartments**：关闭的染色质，表达不活跃，基因缺乏，结构紧凑，含有基因沉默的组蛋白标志物，位于核的外围
+
+![](https://files.mdnice.com/user/20439/7140edef-40a9-4f56-af3c-30345aa0c2de.png)
+最后一行Eigenvecotr的正负区分了A/B compartments，结合上面几行图像信息可以明显看出这种特点
+### 工具1：HiTC(pca.hic)
+
+![](https://files.mdnice.com/user/20439/9c60b8d6-68c5-4407-a347-b2c9b2de4c8c.png)
+
+### 工具2：juicer (eigenvector)
+
+https://github.com/aidenlab/juicer/wiki/Eigenvector
+
+juicer只能单个染色体分析，所以要写循环。
+```
+for chr in {1..22}
+do
+java -jar juicer_tools.jar eigenvector <NONE/VC/VC_SQRT/KR> *.hic $chr BP <binsize> 
+./juicer_output/${chr}_eigen.txt
+done
+```
+
+**<NONE/VC/VC_SQRT/KR>**：
+选择标准化方式。关于这几种标准化方式的特点，在github上查到了答案但是看不懂，先放这吧。不知有无大佬能解答：
+>VC: vanilla coverage (overcorrects low coverage loci)
+
+>VC_SQRT: square root vanilla coverage (creates a matrix whose row and column sums are all approximately equal)
+
+>KR : Knight and Ruiz normalization (works at both low and high resolutions.)
+
+>Ref: Knight, P., and Ruiz, D. (2012). A fast algorithm for matrix balancing. IMA J. Numer. Anal. Published online October 26, 2012. http://dx.doi.org/10.1093/imanum/drs019.
+
+https://github.com/aidenlab/juicer/issues/19
+
+ **< binsize>** :选择分辨率大小
+ 
+**`*.hic`到`*.allValidPairs`的格式转换：**
+
+
+`*.hic`是需要输入的数据文件。而将数据格式从`*.allValidPairs`转换为`*.hic`需要用到HiC-Pro的一个脚本：
+
+```
+PATHWAY/HiC-Pro_2.11.4/bin/utils/hicpro2juicebox.sh -i ./*.allValidPairs -g PATHWAY/HiCPro_2.11.4/annotation/chrom_hg19.sizes -j PATHWAY/juicer/scripts/CPU/common/juicer_tools.jar 
+-t tmp -o ./
+```
+命令里除了`*.allValidPairs`文件位置，还需要给出基因组注释大小文件的位置以及juicer的安装位置。
+
+## Call TADs
+### TADs 和 loop
+TADs：topological associated domains 拓扑相关结构域。是指在染色质区室中，互相作用相对频繁的基因组区域。（第一行的每一个红色三角就是一个TAD）
+![](https://files.mdnice.com/user/20439/dd1e3727-1c38-458d-9f7f-84b44a9515bf.png)
+
+在哺乳动物基因组中，TAD通常由**CTCF这个转录抑制因子**给分割开来。CTCF还会和**Cohesin蛋白复合物**结合，帮助基因组形成相对稳定的三维结构。
+
+![](https://files.mdnice.com/user/20439/5ba0a958-e775-4e90-9a13-f0214fbdf9c5.png)
+
+正由于此，**两个TAD之间的转录活性非常低**（转录需要打开DNA），而结合CTCF等转录抑制因子的DNA元件，也被称为insulator（绝缘子）。
+
+**在TAD内部转录非常活跃**。CTCF在帮助基因组DNA凹造型的同时，把DNA元件给绑到了一起。而这样相互作用的元件，通常是**enhancer（增强子）和promoter（启动子）**，他们往往分布在相距很远的染色质区域，却因为CTCF蛋白在三维空间中聚集在一起，我们把这种结构称之为**loop**。
+
+![](https://files.mdnice.com/user/20439/498f1b79-209f-40b9-87bf-a44f26cf8cec.png)
+
+（部分解释引自知乎https://www.zhihu.com/question/50270622/answer/1715108352）
+
+### Call TADs
+
+由于TAD结构对功能有非常大的影响，因此识别TAD边界至关重要。  
+现有有如下几种方法：
+
+>Directionality Index，DI   
+Insulation Score  
+Arrowhead  
+TADbit  
+DomainCaller  
+TADtree  
+
+其中前三种较为常用。
+
+### Call TADs: DI
+
+![](https://files.mdnice.com/user/20439/735e4a29-83f4-4dfb-a49a-9856faf0d46e.png)
+对于TAD边界位置来说，它的左右位置互作方向是相反的。如上图，A点偏好上游，而B点偏好下游。directionality index（方向指数）这个方法就是根据这个原理设计的。
+
+![](https://files.mdnice.com/user/20439/c75ee95c-211f-4061-a956-c00d9588c23c.png)
+
+DI-HMM 方法首先采用方向指数(directionality index)来表征一个染色体区域与上下游交互作用的偏差，当这个偏差出现符号跳转时，意味着可能出现 TAD 的边界．在方向指数中利用隐马尔可夫模型可以推断出 TAD 的具体位置。**（但是HMM模型到底是如何在算法中起作用的？）**
+
+![](https://files.mdnice.com/user/20439/ae437fed-9db3-4e75-8418-a9692411b73c.png)
+
+### Call TADs: Insulation Score
+
+https://github.com/dekkerlab/crane-nature-2015  
+![](https://files.mdnice.com/user/20439/72a82d67-6a4f-4e07-ba28-ee4de7cad25f.png)
+首先在热图上定义一个滑动窗口，在滑动过程中统计每个窗口中互作的数量，这样可以得到下面那条线。这样就可以得到互作数量发生转变的位置。
+
+
+```
+perl matrix2insulation.pl -i *.dense_header.matrix -is 500000 -ids 250000 -im mean -nt 0.1 -o ./  
+```
+---
+- 参数解释  
+
+i: 交互矩阵  
+is: insulation square，默认500000，动物推荐500000，植物推荐200000-250000.  
+ids: insulation delta span，默认250000，植物推荐100000-200000. is必须要比ids大. 
+nt: delta bound阈值，提高阈值可以过滤一些边界不明显的TAD.  
+bmoe: boundary margin of error.一般不予设定。  
+
+---
+- 如何得到交互矩阵
+
+hicpro(*.matrix & *.bed) → IS input matrix
+
+**Step1:** 将稀疏矩阵转成稠密矩阵。  
+（稀疏矩阵:矩阵中0元素的个数远大于非零,且0元素分布无规律；稠密矩阵反之）
+
+
+```
+Python2.7 PATHWAY/HiC-Pro_2.11.4/bin/utils/sparseToDense.py *_50k_iced.matrix -b *_50k_abs.bed --perchr > mESC_50k.log 2>&1
+```
+**Step2:**  添加表头  
+采用R或者python/perl  
+表头形式`bin6000000|ce10|chrX:1-10001`
+bin的顺序|物种参考基因组的名字|染色体位置信息  
+
+下图是利用R添加表头的代码示例
+![](https://files.mdnice.com/user/20439/bb0bf011-378b-49ac-9e68-18c911db9d9b.png)
+注意：  
+line5调用的参考基因组，之前用的哪个版本比对，这时候就调用哪个版本。  
+line6要输入数据分析所使用的分辨率数值
+
+---
+- 输出结果  
+
+输出4个文件
+![](https://files.mdnice.com/user/20439/09a7c2b7-2367-46c3-aaed-af53d65a49a9.png)
+
+.insulation.bedGraph
+![](https://files.mdnice.com/user/20439/efdf9a55-be0c-403f-8d33-df02a38b7cfb.png)
+前三列是每个BIN的位置信息，最后一列是insulation score的得分。
+
+.insulation.boundaries.bed
+![](https://files.mdnice.com/user/20439/09282ec9-33d3-41ed-a2fb-204a90b465b5.png)
+边界信息文件。第四列是包含位置信息的表头，最后一列是边界强度的得分情况
+
+### Call TADs: Arrowhead
+https://github.com/aidenlab/juicer/wiki/Arrowhead  
+是一个juicer工具。
+
+```
+java -Xmx8g -jar PATHWAY/juicer/scripts/CPU/common/juicer_tools.jar arrowhead ./*.hic --
+threads 8 -r 10000 -k KR ./contact_domains_10kb
+```
+
+## Call loops: HiCCUPS
+
+https://github.com/aidenlab/juicer/wiki/HiCCUPS
+
+同样是juicer工具。可以用GPU或CPU运算，一般还是选择CPU。但是GPU运算速度快一点。
+```
+java -Xmx8g -jar PATHWAY/juicer/scripts/CPU/common/juicer_tools.jar hiccups --cpu
+--threads 8 -r 5000 -k KR ./*.hic ./
+```
+
+## 可视化工具
+
+有以下几种：
+
+• Juicebox  
+• WashU: http://epigenomegateway.wustl.edu/  
+• HiTC  
+• HiCPlotter  
+• HiCExplorer  
+• R  
+
+这个比较直观，就不记了。用到的时候再说吧。
