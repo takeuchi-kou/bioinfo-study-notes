@@ -1,7 +1,29 @@
 # Hi-C数据分析相关的基本概念
 ## 染色质的层级结构
 ![](https://files.mdnice.com/user/20439/2055cff1-87d7-40cb-8920-90888f3808e9.png)
-研究不同层级结构的互作关系需要不同的分辨率精度。上图示意了不同分辨率分别能反映的互作结构层次。关于互作结构层次概念，后文有详述。
+研究不同层级结构的互作关系需要不同的分辨率精度。上图示意了不同分辨率分别能反映的互作结构层次。
+
+- 老生常谈的基因组三维层级结构示意图
+
+![](https://files.mdnice.com/user/20439/1bb05fbc-4146-4125-b959-a23af57a6463.png)
+a） 染色体有各自的区室，并非随意分布  
+b） 靠近核小斑（nuclear speckle）的区域为 compartment A，呈现转录活跃状态；而 compartment B 一般分布在靠近核仁或核膜的位置，呈现转录抑制状态。
+
+![](https://files.mdnice.com/user/20439/22f6fbca-0a1d-4078-b05e-d7fb8e13835d.png)
+c） TAD之间依靠CTCF蛋白进行分隔，TAD中间存在多个loop结构  
+d） NIPBL-MAU2蛋白复合物与黏连蛋白（cohesin）相互作用，挤压DNA结构形成loop
+
+- 敲除 TAD 相关蛋白对 TAD 和 compartment 结构产生不同影响
+
+![](https://files.mdnice.com/user/20439/cf6e6179-6e5d-4b27-9b3d-5960f5695b73.png)
+上边几张图可以看出敲除后的TADs peak不见了，下面几张则显示敲除NIPBL的compartment反而显示出了更加精细的结构。  
+这显示了TAD和compartment结构受不同调控机制影响。
+
+- 总结：  
+
+1. 转录性质类似元件的聚集与Compartment A/B的形成相关
+2. Loop extrusion调控了局部的promoter-enhancer之间的互作，并对全局的转录、分区环境可能起相反作用。
+3. The genome is organized in a hierarchical manner through mechanisms such as loop extrusion and transcription-related compartmentalization
 
 ## 计数矩阵、热图及分辨率
 ![](https://files.mdnice.com/user/20439/40d98446-6055-4980-b9e9-eb32d18864db.png)
