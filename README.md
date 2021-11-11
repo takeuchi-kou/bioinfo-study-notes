@@ -1,2 +1,2 @@
 # bioinfo-study-notes
-Output make better input！
+Output makes better input！
