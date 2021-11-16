@@ -1,6 +1,10 @@
-condarc
+# env list 以及相应的package
 
-mirror 1
+
+
+# 镜像选择
+
+北服
 
 ```
 channels:
@@ -9,11 +13,12 @@ channels:
   - https://mirrors.bfsu.edu.cn/anaconda/pkgs/free
 
 show_channel_urls: true
+ssl_verify: false
 ```
 
 
 
-mirror 2
+mirror 2 清华（经常抽风）
 
 ```bash
 channels:
