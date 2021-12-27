@@ -154,3 +154,58 @@ x：需要在序列a中查找的项目
 
 # 3. Hash tables for indexing
 
+## Hash table
+
+哈希表就像是一群空的篮子，其中哈希函数h负责把3-mers map到哈希表上
+
+
+
+![image-20211227180937791](https://gitee.com/joy_thestraydog/typora/raw/master/img/image-20211227180937791.png)
+
+- 普通映射
+
+函数h把一个3-mer映射到hash table上面，制造一个entry。
+
+1个entry含有：key(3-mer) 、offset(记录位置) 、reference(扩展)
+
+![image-20211227185159198](https://gitee.com/joy_thestraydog/typora/raw/master/img/image-20211227185159198.png)
+
+- 遇到重复的key
+
+如果遇到重复的3-mer，我们把它映射到已经存在的key的reference里面
+
+![image-20211227185311918](https://gitee.com/joy_thestraydog/typora/raw/master/img/image-20211227185311918.png)
+
+- collision
+
+因为3-mer比hash table中的bucket要多，所以很容易产生2个key挤到一个bucket的情况。
+
+鸽子洞理论：我们预料到有一些不同的key(3-mer)会在同一个篮子里
+
+![image-20211227185633380](https://gitee.com/joy_thestraydog/typora/raw/master/img/image-20211227185633380.png)
+
+在collision后还可以继续添加重复的key，例如下图中的GGG
+
+![image-20211227185816778](https://gitee.com/joy_thestraydog/typora/raw/master/img/image-20211227185816778.png)
+
+## match
+
+我们制作完hash table后，要开始把P串与T串相匹配了。
+
+例如我们想在T串中寻找所有符合GGG的片段：
+
+首先我们通过哈希函数h找到hash table里对应的bucket
+
+![image-20211227190144768](https://gitee.com/joy_thestraydog/typora/raw/master/img/image-20211227190144768.png)
+
+然后我们与这个bucket中的第一个entry中的key相比对，发现不匹配，继续匹配下一个，最终我们匹配到了全部3个匹配的3-mer
+
+![image-20211227190345560](https://gitee.com/joy_thestraydog/typora/raw/master/img/image-20211227190345560.png)
+
+## python dictionary
+
+python中的【字典】本身就是一个哈希表。
+
+如果我们需要找到k-mer的位置，直接输入key即可。
+
+![image-20211227190608433](https://gitee.com/joy_thestraydog/typora/raw/master/img/image-20211227190608433.png)
