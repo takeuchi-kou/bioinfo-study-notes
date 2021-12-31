@@ -93,3 +93,19 @@ n=2为两步，因为我们已经知道n=1的情形，所以只需按照概率�
 稳定状态的意思并不是不再跃迁，而是在任意n的时候，链系统处于1和2的概率都不再发生变化。
 
 ![image-20211230145433407](https://gitee.com/joy_thestraydog/typora/raw/master/img/image-20211230145433407.png)
+
+### 马尔科夫链的收敛问题
+
+对于比较完好的马尔科夫链(上)，在非常多步骤以后，概率通常都会收敛。但是对于某些不太好的马尔科夫链(下)，则不能完成收敛。
+
+![image-20211231141609028](https://gitee.com/joy_thestraydog/typora/raw/master/img/image-20211231141609028.png)
+
+### 马尔科夫链的稳态(recurrent)和瞬态(transient)
+
+如果我们从state i开始，无论走哪一步，都能回到i，则我们称i为稳态；
+
+如果不是稳态，即为瞬态。
+
+一个马尔科夫系统中，稳态可以分为不同的类(classes)。同一类中有可以用于互相沟通的路径，而不同类中则没有
+
+![image-20211231155509500](https://gitee.com/joy_thestraydog/typora/raw/master/img/image-20211231155509500.png)
